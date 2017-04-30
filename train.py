@@ -88,7 +88,7 @@ n_hidden_1 = 10
 n_hidden_2 = 5
 display_step = 1
 
-print("Each batch has 150 texts and each matrix has 119930 elements (words):",get_batch(X_train, y_train,1,150)[0].shape)
+print("Each batch has 150 texts and each matrix has 25610 elements (words):",get_batch(X_train, y_train,1,150)[0].shape)
 
 weights = {
     'h1': tf.Variable(tf.random_normal([n_input,n_hidden_1])),
@@ -116,7 +116,7 @@ optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-training_epochs = 10
+training_epochs = 1
 with tf.Session() as sess:
     sess.run(init)
     saver.restore(sess,'tmp/model.ckpt')
@@ -143,13 +143,21 @@ with tf.Session() as sess:
     index_correct = tf.argmax(output_tensor,1)
     correct = tf.equal(index_prediction, index_correct)
 
-    # precision = metrics.precision_score(index_prediction,index_correct)
-    # recall = metrics.recall_score(index_prediction,index_correct)
+
     accuracy = tf.reduce_mean(tf.cast(correct,'float'))
     total_test_data = len(X_test)
     batch_x_test, batch_y_test = get_batch(X_test, y_test, 0,len(X_test))
     print ('Accuracy: ',accuracy.eval({input_tensor:batch_x_test, output_tensor:batch_y_test}))
 
+
+    y_true = index_correct.eval({output_tensor:batch_y_test})
+    y_pred = index_prediction.eval({input_tensor:batch_x_test})
+    print "Precision", metrics.precision_score(y_true, y_pred)
+    print "Recall", metrics.recall_score(y_true, y_pred)
+    print "f1_score", metrics.f1_score(y_true, y_pred)
+    print "confusion_matrix"
+    print metrics.confusion_matrix(y_true, y_pred)
+    fpr, tpr, tresholds = metrics.roc_curve(y_true, y_pred)
     save_path = saver.save(sess, "tmp/model.ckpt")
     print("Model saved in file: %s" % save_path)
 
